@@ -3,6 +3,14 @@
 
 VAGRANTFILE_API_VERSION = "2"
 
+# shell script to install (or update) puppet dependencies
+$puppetDependencies = <<SCRIPT
+echo docker manifest
+if puppet module list | grep garethr-docker > /dev/null; then puppet module upgrade garethr-docker; else puppet module install garethr-docker; fi
+echo gaudi manifest
+if puppet module list | grep cethy-gaudi > /dev/null; then puppet module upgrade cethy-gaudi; else puppet module install cethy-gaudi; fi
+SCRIPT
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "phusion/ubuntu-14.04-amd64"
 
@@ -17,16 +25,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # end
 
   # puppet dependencies
-  config.vm.provision :shell do |shell|
-     shell.inline = "if puppet module list | grep garethr-docker > /dev/null; then puppet module upgrade garethr-docker; else puppet module install garethr-docker; fi"
-  end
+  config.vm.provision "shell", inline: $puppetDependencies
 
   config.vm.provision "puppet" do |puppet|
     puppet.manifests_path = "puppet/manifests"
     puppet.manifest_file  = "init.pp"
-
-    puppet.module_path = 'puppet/modules'
-
     #puppet.options="--verbose --debug"
   end
 end
